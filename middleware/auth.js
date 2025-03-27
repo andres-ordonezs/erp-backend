@@ -4,6 +4,7 @@
 const jwt = require("jsonwebtoken");
 const { SECRET_KEY } = require("../config");
 const { UnauthorizedError } = require("../expressError");
+const Database = require("../models/database");
 
 
 /** Middleware: Authenticate user.
@@ -13,7 +14,6 @@ const { UnauthorizedError } = require("../expressError");
  *
  * It's not an error if no token was provided or if the token is not valid.
  */
-
 function authenticateJWT(req, res, next) {
   const authHeader = req.headers?.authorization;
   if (authHeader) {
@@ -61,6 +61,42 @@ async function ensureCorrectUser(req, res, next) {
   throw new UnauthorizedError();
 }
 
+/** Middleware to ensure the user is connected to a database and authorized to access it.
+ *
+ * Checks if the user has a valid `databaseId` in the request headers or params.
+ * Then verifies if the user is linked to that database.
+ *
+ * If not, raises Unauthorized.
+ */
+async function ensureDatabaseUser(req, res, next) {
+  console.log("res.locals.user: ", res.locals.user);
+  console.log("databaseId: ", req.headers);
+  try {
+    const userId = res.locals.user?.id;
+    const databaseId = req.headers["database-id"];
+
+    if (!userId) {
+      throw new UnauthorizedError("User authentication required.");
+    }
+
+    if (!databaseId) {
+      throw new UnauthorizedError("Database connection required.");
+    }
+
+    // Check if the user is linked to the database
+    const isAuthorized = await Database.isUserLinkedToDatabase(userId, databaseId);
+
+    if (!isAuthorized) {
+      throw new UnauthorizedError("User not authorized to access this database.");
+    }
+
+    //res.locals.databaseId = databaseId;
+    return next();
+  } catch (err) {
+    return next(err);
+  }
+}
+
 /** Middleware to allow either super admin or correct user.
  *
  * If neither condition is met, raises Unauthorized.
@@ -72,7 +108,6 @@ function ensureSuperAdminOrCorrectUser(req, res, next) {
   if (isSuperAdmin || (currentUser && currentUser === req.params.email)) {
     return next();
   }
-
   throw new UnauthorizedError();
 }
 
@@ -82,5 +117,6 @@ module.exports = {
   ensureLoggedIn,
   ensureCorrectUser,
   ensureSuperAdmin,
-  ensureSuperAdminOrCorrectUser
+  ensureSuperAdminOrCorrectUser,
+  ensureDatabaseUser,
 };

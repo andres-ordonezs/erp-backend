@@ -236,6 +236,25 @@ class Database {
       throw err;
     }
   }
+
+  /** Checks if a user is linked to a specific database.
+  *  Returns `true` if authorized, `false` otherwise.
+  */
+  static async isUserLinkedToDatabase(userId, databaseId) {
+    try {
+      const result = await db.query(
+        `SELECT user_id
+        FROM user_databases
+        WHERE user_id = $1 AND database_id = $2`,
+        [userId, databaseId]
+      );
+
+      return result.rows.length > 0;
+    } catch (err) {
+      console.error("Error checking if user is linked to database:", err);
+      throw err;
+    }
+  }
 }
 
 

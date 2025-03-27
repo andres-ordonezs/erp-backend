@@ -36,7 +36,9 @@ CREATE TABLE user_databases(
 -- Apps Table
 CREATE TABLE apps (
     id SERIAL PRIMARY KEY,
+    category INT,
     name VARCHAR(255) UNIQUE NOT NULL,
+    URL VARCHAR(255) UNIQUE NOT NULL,
     icon TEXT,
     description TEXT
 );

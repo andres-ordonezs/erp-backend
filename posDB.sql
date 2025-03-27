@@ -12,6 +12,8 @@ CREATE DATABASE posdb;
 DROP TABLE IF EXISTS user_databases CASCADE;
 DROP TABLE IF EXISTS databases CASCADE;
 DROP TABLE IF EXISTS users CASCADE;
+DROP TABLE IF EXISTS database_apps CASCADE;
+DROP TABLE IF EXISTS apps CASCADE;
 
 -- Drop existing types with CASCADE to avoid dependency issues
 DROP TYPE IF EXISTS user_role CASCADE;

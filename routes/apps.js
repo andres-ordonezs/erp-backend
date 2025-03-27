@@ -3,25 +3,43 @@
 /* Routes for apps */
 const express = require("express");
 const jsonschema = require("jsonschema");
-const { ensureSuperAdmin } = require("../middleware/auth");
+const { ensureSuperAdmin, ensureDatabaseUser } = require("../middleware/auth");
 const { BadRequestError } = require("../expressError");
 const App = require("../models/app");
-const appUpdateSchema = require("../schemas/appUpdate.json");
+const appUpdateSchema = require("../schemas/appUdpate.json");
 
 const router = express.Router();
 
+
 /** GET / => { apps: [app, ...] }
+ *
+ * Returns list of all apps belonging to a specific database.
+ *
+ * Authorization required: User must be a database user
+ **/
+router.get("/", ensureDatabaseUser, async function (req, res, next) {
+  try {
+    const databaseId = req.headers["database-id"]; // Get from headers
+    const apps = await App.getByDatabaseId(databaseId);
+    return res.json({ apps });
+  } catch (err) {
+    return next(err);
+  }
+});
+
+/** GET /apps => { apps: [app, ...] }
  *
  * Returns list of all apps.
  *
- * Authorization required: none
+ * Authorization required: superAdmin
  **/
-router.get("/", async function (req, res, next) {
+router.get("/all", ensureSuperAdmin, async function (req, res, next) {
   const apps = await App.getAll();
   return res.json({ apps });
 });
 
-/** GET /[id] => { app }
+
+/** GET /[appId] => { app }
  *
  * Returns details of a specific app by ID.
  *
@@ -36,7 +54,7 @@ router.get("/:id", async function (req, res, next) {
  *
  * Create a new app.
  *
- * Required fields: { name, icon, description }
+ * Required fields: { name, icon, url, category, description }
  *
  * Authorization required: SuperAdmin
  **/
